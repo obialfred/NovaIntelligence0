@@ -6,47 +6,83 @@ struct ContentView: View {
     @State private var isShowingSettings = false
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            addressBar
+            Divider()
             NovaWebView(url: $targetURL)
-                .toolbar {
-                    ToolbarItemGroup(placement: .navigationBarLeading) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(Color(hex: "3B2FF3"))
-                        Text("Nova Intelligence")
-                            .font(.headline)
-                    }
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button {
-                            isShowingSettings.toggle()
-                        } label: {
-                            Image(systemName: "slider.horizontal.3")
-                        }
-                    }
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        TextField("https://", text: Binding(
-                            get: { addressBarText.isEmpty ? targetURL.absoluteString : addressBarText },
-                            set: { newValue in
-                                addressBarText = newValue
-                            }
-                        ))
-                        .textFieldStyle(.roundedBorder)
-                        .autocapitalization(.none)
-                        .keyboardType(.URL)
-                        .submitLabel(.go)
-                        .onSubmit {
-                            guard let url = URL(fromUserInput: addressBarText) else { return }
-                            targetURL = url
-                            addressBarText = ""
-                        }
-                        Button(action: refresh) {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                    }
-                }
-                .sheet(isPresented: $isShowingSettings) {
-                    SettingsSheet()
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsSheet()
+                #if os(iOS)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                #endif
+        }
+        #if os(macOS)
+        .frame(minWidth: 720, minHeight: 480)
+        #endif
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(Color(hex: "3B2FF3"))
+            Text("Nova Intelligence")
+                .font(.headline)
+                .foregroundStyle(Color.primary)
+            Spacer()
+            Button {
+                isShowingSettings.toggle()
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .imageScale(.medium)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private var addressBar: some View {
+        HStack(spacing: 12) {
+            TextField(
+                "https://",
+                text: Binding(
+                    get: {
+                        addressBarText.isEmpty ? targetURL.absoluteString : addressBarText
+                    },
+                    set: { newValue in
+                        addressBarText = newValue
+                    }
+                )
+            )
+            #if os(iOS)
+            .autocapitalization(.none)
+            .keyboardType(.URL)
+            .submitLabel(.go)
+            #endif
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .onSubmit(loadFromAddressBar)
+
+            Button(action: refresh) {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(PlainButtonStyle())
+            #if os(macOS)
+            .help("Reload the current page")
+            #endif
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private func loadFromAddressBar() {
+        guard let url = URL(fromUserInput: addressBarText) else { return }
+        targetURL = url
+        addressBarText = ""
     }
 
     private func refresh() {
@@ -66,11 +102,10 @@ private struct SettingsSheet: View {
             }
         }
         .padding()
-        .presentationDetents([.medium, .large])
     }
 }
 
-#Preview
+#if DEBUG
 struct ContentView_Previews: PreviewProvider {
     @State static var sampleURL = URL.defaultNovaURL
 
@@ -78,3 +113,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView(targetURL: $sampleURL)
     }
 }
+#endif
