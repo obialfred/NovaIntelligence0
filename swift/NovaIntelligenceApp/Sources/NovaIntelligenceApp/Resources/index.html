@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nova Intelligence</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="toolbar">
+        <div class="brand">
+            <span class="logo">✦</span>
+            <h1>Nova Intelligence</h1>
+        </div>
+        <button class="about-button" type="button" id="aboutButton">About</button>
+    </header>
+
+    <main class="layout">
+        <section class="conversation" id="conversation" aria-live="polite">
+            <article class="message assistant">
+                <header>Nova</header>
+                <p>Welcome to the offline Nova Intelligence preview. Ask a question to see how the branded chat experience feels even without a network connection.</p>
+            </article>
+        </section>
+        <form class="composer" id="composer" autocomplete="off">
+            <label class="visually-hidden" for="prompt">Message Nova</label>
+            <textarea id="prompt" name="prompt" rows="2" placeholder="Type a prompt and press ⌘⏎ to send" required></textarea>
+            <div class="composer-actions">
+                <button type="reset" class="secondary" id="resetConversation">Clear</button>
+                <button type="submit" class="primary">Send</button>
+            </div>
+        </form>
+    </main>
+
+    <dialog id="aboutDialog">
+        <form method="dialog">
+            <h2>Offline Demo</h2>
+            <p>This standalone preview ships with the Nova Intelligence SwiftUI shell. It uses an on-device rules engine to craft playful responses so you can explore the navigation without Docker, local servers, or external dependencies.</p>
+            <p>When you are ready to connect to a real Nova deployment, paste its URL into the address bar inside the macOS app.</p>
+            <button value="close" class="primary">Close</button>
+        </form>
+    </dialog>
+
+    <script src="app.js"></script>
+</body>
+</html>

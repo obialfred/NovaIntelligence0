@@ -9,6 +9,22 @@ This repository contains the building blocks required to rebrand [Open WebUI](ht
 | `Dockerfile` | Builds a Nova-branded variant of the official Open WebUI container image. |
 | `swift/NovaIntelligenceApp` | SwiftUI application package capable of running on macOS, iOS, and tvOS. |
 
+## Zero-dependency offline preview
+
+If you simply want to explore the Nova Intelligence interface on macOS without Docker, localhost ports, or any backend setup, run the bundled SwiftUI shell. It ships with an offline HTML/JS demo that opens instantly and mirrors the branded experience.
+
+```bash
+cd NovaIntelligence0
+./scripts/launch-mac.sh
+```
+
+The script compiles the Swift package if needed and launches the "Nova Intelligence" app window. From there you can:
+
+* Interact with the offline chat sandbox to feel the navigation and styling.
+* Open the toolbar address bar and paste a real Nova deployment URL when you're ready to connect to a live backend.
+
+> **Note:** The script requires the macOS Swift toolchain (installed automatically with Xcode 15+ or the standalone Swift installer). No additional dependencies are needed.
+
 ## Nova-branded container image
 
 The `Dockerfile` extends the upstream Open WebUI image and performs the following:
@@ -27,11 +43,13 @@ cd NovaIntelligence0            # skip if you are already inside the repo folder
 docker build -t nova-intelligence .
 ```
 
-Run it with default ports:
+Run it on a fresh localhost port (4173 in this example):
 
 ```bash
-docker run --rm -p 3000:8080 nova-intelligence
+docker run --rm -p 4173:8080 nova-intelligence
 ```
+
+Then open <http://localhost:4173> in your browser to confirm the Nova Intelligence UI loads without errors.
 
 Configure upstream model backends (for example, Llama 4) through the generated Nova Intelligence UI as you would with the original Open WebUI deployment.
 
