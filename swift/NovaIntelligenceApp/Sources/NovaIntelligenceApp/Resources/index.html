@@ -6,38 +6,178 @@
     <title>Nova Intelligence</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <header class="toolbar">
-        <div class="brand">
-            <span class="logo">✦</span>
-            <h1>Nova Intelligence</h1>
-        </div>
-        <button class="about-button" type="button" id="aboutButton">About</button>
-    </header>
+<body data-theme="system">
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primary">
+            <header class="sidebar__brand">
+                <div class="brand-mark" aria-hidden="true">oi</div>
+                <div class="brand-copy">
+                    <span class="brand-name">Nova Intelligence</span>
+                    <span class="brand-variant">(Open WebUI)</span>
+                </div>
+                <button class="sidebar__settings" id="openSettings" aria-label="Open settings">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm9 5a1 1 0 0 0-.78-.97l-1.38-.3a7.08 7.08 0 0 0-.4-.97l.8-1.16a1 1 0 0 0-.12-1.28l-1.42-1.42a1 1 0 0 0-1.28-.12l-1.16.8c-.32-.14-.65-.26-.97-.36l-.3-1.38A1 1 0 0 0 12 3h-2a1 1 0 0 0-.98.78l-.3 1.38c-.34.11-.67.23-1 .37l-1.15-.81a1 1 0 0 0-1.28.12L3.6 6.06a1 1 0 0 0-.12 1.28l.81 1.16c-.14.31-.27.64-.37.97l-1.38.3A1 1 0 0 0 2 12v2c0 .48.34.89.81.98l1.38.3c.1.33.22.66.36.97l-.81 1.16a1 1 0 0 0 .12 1.28l1.42 1.42c.36.36.92.39 1.28.12l1.16-.8c.31.14.64.26.97.37l.3 1.38c.09.47.5.81.98.81h2c.48 0 .89-.34.98-.81l.3-1.38c.33-.1.66-.22.97-.36l1.16.8c.36.27.92.24 1.28-.12l1.42-1.42a1 1 0 0 0 .12-1.28l-.8-1.16c.14-.32.26-.65.36-.98l1.38-.3c.47-.09.81-.5.81-.98v-2z"/></svg>
+                </button>
+            </header>
 
-    <main class="layout">
-        <section class="conversation" id="conversation" aria-live="polite">
-            <article class="message assistant">
-                <header>Nova</header>
-                <p>Welcome to the offline Nova Intelligence preview. Ask a question to see how the branded chat experience feels even without a network connection.</p>
-            </article>
-        </section>
-        <form class="composer" id="composer" autocomplete="off">
-            <label class="visually-hidden" for="prompt">Message Nova</label>
-            <textarea id="prompt" name="prompt" rows="2" placeholder="Type a prompt and press ⌘⏎ to send" required></textarea>
-            <div class="composer-actions">
-                <button type="reset" class="secondary" id="resetConversation">Clear</button>
-                <button type="submit" class="primary">Send</button>
-            </div>
-        </form>
-    </main>
+            <section class="sidebar__section model-picker">
+                <label for="modelSelect">Select a model</label>
+                <button id="modelButton" class="model-button" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="model-name">GPT-4 Turbo</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <ul class="model-menu" id="modelMenu" role="listbox" aria-label="Available models" hidden>
+                    <li role="option" data-model="GPT-4 Turbo" aria-selected="true">GPT-4 Turbo</li>
+                    <li role="option" data-model="Nova Pro">Nova Pro</li>
+                    <li role="option" data-model="Deep Researcher">Deep Researcher</li>
+                    <li role="option" data-model="Vision + Audio">Vision + Audio</li>
+                </ul>
+            </section>
 
-    <dialog id="aboutDialog">
+            <nav class="sidebar__section sidebar-nav" aria-label="Workspace">
+                <ul>
+                    <li class="active">
+                        <button type="button">
+                            <span class="icon" aria-hidden="true">＋</span>
+                            New Chat
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button">
+                            <span class="icon" aria-hidden="true">⌕</span>
+                            Search
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button">
+                            <span class="icon" aria-hidden="true">✎</span>
+                            Notes
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button">
+                            <span class="icon" aria-hidden="true">▦</span>
+                            Workspace
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <section class="sidebar__section pinned-chats" aria-label="Chats">
+                <header>
+                    <span>Chats</span>
+                    <button type="button" class="secondary" aria-label="Create folder">＋</button>
+                </header>
+                <ul>
+                    <li class="chat-item active">
+                        <span class="icon" aria-hidden="true">●</span>
+                        Hello, User
+                    </li>
+                    <li class="chat-item">
+                        <span class="icon" aria-hidden="true">●</span>
+                        Research Plan
+                    </li>
+                    <li class="chat-item">
+                        <span class="icon" aria-hidden="true">●</span>
+                        Competitive Brief
+                    </li>
+                </ul>
+            </section>
+
+            <footer class="sidebar__footer">
+                <button id="clearConversations" type="button" class="ghost">
+                    <span aria-hidden="true">🗑</span>
+                    Clear conversations
+                </button>
+                <div class="user-card">
+                    <div class="avatar" aria-hidden="true">OU</div>
+                    <div class="user-copy">
+                        <strong>Obi Alfred</strong>
+                        <span>obi@nova.ai</span>
+                    </div>
+                    <button class="ghost" aria-label="Account options">⋮</button>
+                </div>
+            </footer>
+        </aside>
+
+        <main class="workspace" aria-live="polite">
+            <header class="workspace__toolbar">
+                <div class="toolbar-group">
+                    <button class="ghost" aria-label="Open navigation">☰</button>
+                    <div class="model-pill" id="activeModel">GPT-4 Turbo</div>
+                </div>
+                <div class="toolbar-group">
+                    <button class="ghost" aria-label="Notifications">🔔</button>
+                    <button class="ghost" aria-label="Settings" id="openSettingsTop">⚙️</button>
+                    <button class="ghost" aria-label="Profile">🙂</button>
+                </div>
+            </header>
+
+            <section class="workspace__content">
+                <header class="conversation-header">
+                    <h1>Hello, <span id="userName">User</span></h1>
+                    <p class="conversation-subtitle">How can I help you today?</p>
+                </header>
+
+                <div class="suggestions" id="suggestions">
+                    <button type="button">Overcome procrastination</button>
+                    <button type="button">Tell me a fun fact</button>
+                    <button type="button">Show me an ideas list</button>
+                    <button type="button">Help me study</button>
+                </div>
+
+                <div class="conversation" id="conversation" aria-live="polite"></div>
+            </section>
+
+            <form class="composer" id="composer" autocomplete="off">
+                <label class="visually-hidden" for="prompt">Message Nova</label>
+                <div class="composer__field">
+                    <textarea id="prompt" name="prompt" rows="1" placeholder="Message Nova Intelligence" required></textarea>
+                    <div class="composer__actions">
+                        <button type="button" class="ghost" id="attachButton" aria-label="Attach">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5v7a4.5 4.5 0 0 1-9 0v-8a3 3 0 0 1 6 0v7a1.5 1.5 0 0 1-3 0V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        </button>
+                        <button type="button" class="ghost" id="micButton" aria-label="Voice input">🎙</button>
+                        <button type="submit" class="primary" id="sendButton" aria-label="Send message">➤</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <dialog id="settingsDialog" class="settings-dialog">
         <form method="dialog">
-            <h2>Offline Demo</h2>
-            <p>This standalone preview ships with the Nova Intelligence SwiftUI shell. It uses an on-device rules engine to craft playful responses so you can explore the navigation without Docker, local servers, or external dependencies.</p>
-            <p>When you are ready to connect to a real Nova deployment, paste its URL into the address bar inside the macOS app.</p>
-            <button value="close" class="primary">Close</button>
+            <header>
+                <h2>Nova Intelligence Settings</h2>
+                <button type="submit" class="ghost" value="close" aria-label="Close settings">✕</button>
+            </header>
+            <section class="settings-section">
+                <h3>Theme</h3>
+                <div class="theme-picker" role="group" aria-label="Theme">
+                    <button type="button" data-theme="system" class="active">System</button>
+                    <button type="button" data-theme="dark">Dark</button>
+                    <button type="button" data-theme="oled">OLED Dark</button>
+                    <button type="button" data-theme="light">Light</button>
+                    <button type="button" data-theme="her">Her</button>
+                </div>
+            </section>
+            <section class="settings-section">
+                <h3>Language</h3>
+                <select aria-label="Language">
+                    <option>English (US)</option>
+                    <option>English (UK)</option>
+                    <option>Deutsch</option>
+                    <option>日本語</option>
+                </select>
+            </section>
+            <section class="settings-section">
+                <h3>System Prompt</h3>
+                <textarea rows="3" placeholder="Enter system prompt here"></textarea>
+            </section>
+            <footer>
+                <button type="submit" class="ghost" value="close">Close</button>
+                <button type="button" class="primary" id="applySettings">Apply</button>
+            </footer>
         </form>
     </dialog>
 
