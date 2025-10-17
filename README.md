@@ -27,13 +27,13 @@ cd NovaIntelligence0            # skip if you are already inside the repo folder
 docker build -t nova-intelligence .
 ```
 
-Run it with default ports:
+Run it with a non-conflicting local port (the container still listens on 8080 internally):
 
 ```bash
-docker run --rm -p 3000:8080 nova-intelligence
+docker run --rm -p 4310:8080 nova-intelligence
 ```
 
-Configure upstream model backends (for example, Llama 4) through the generated Nova Intelligence UI as you would with the original Open WebUI deployment.
+When the container reports `Application startup complete.` visit <http://localhost:4310> in your browser. You should see the Nova Intelligence interface without errors. Configure upstream model backends (for example, Llama 4) through the generated Nova Intelligence UI as you would with the original Open WebUI deployment.
 
 > **Troubleshooting tip:** Seeing `failed to read dockerfile: open Dockerfile: no such file or directory` means the command was run from a directory that does not contain the project `Dockerfile`. Change into the cloned repository directory and rerun the command with the trailing `.` build context as shown above.
 
