@@ -62,7 +62,13 @@ private extension Representable {
 
     func load(_ url: URL, in webView: WKWebView) {
         if webView.url == url { return }
-        webView.load(URLRequest(url: url))
+
+        if url.isFileURL {
+            let readAccess = url.deletingLastPathComponent()
+            webView.loadFileURL(url, allowingReadAccessTo: readAccess)
+        } else {
+            webView.load(URLRequest(url: url))
+        }
     }
 }
 
@@ -77,6 +83,9 @@ private extension WKWebViewConfiguration {
 
 extension URL {
     static var defaultNovaURL: URL {
+        if let offlineDemo = Bundle.module.url(forResource: "index", withExtension: "html") {
+            return offlineDemo
+        }
         if let primary = URL(string: "https://nova.intelligence.local") {
             return primary
         }
