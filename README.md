@@ -7,7 +7,21 @@ This repository contains the building blocks required to rebrand [Open WebUI](ht
 | Path | Description |
 | --- | --- |
 | `Dockerfile` | Builds a Nova-branded variant of the official Open WebUI container image. |
+| `Makefile` | Convenience targets for building/running the container and compiling the Swift package. |
 | `swift/NovaIntelligenceApp` | SwiftUI application package capable of running on macOS and iOS. |
+
+## Getting started
+
+Clone the repository (replace the example GitHub path with the location where you keep the project) and change into the workspace directory before running any of the commands below:
+
+```bash
+git clone https://github.com/<your-org>/NovaIntelligence0.git
+cd NovaIntelligence0
+```
+
+> If the clone step fails with `Repository not found`, double-check that the URL matches the private repository or fork where you pushed this code. The example above points at a placeholder path and will not work verbatim.
+
+Once you are inside the repository you can build the Docker image, run the container, or launch the SwiftUI shell.
 
 ## Nova-branded container image
 
@@ -23,7 +37,6 @@ The `Dockerfile` extends the upstream Open WebUI image and performs the followin
 Build the image locally (from the repository root so Docker can find the bundled `Dockerfile`):
 
 ```bash
-cd NovaIntelligence0            # skip if you are already inside the repo folder
 docker build -t nova-intelligence .
 ```
 
@@ -35,7 +48,14 @@ docker run --rm -p 3000:8080 nova-intelligence
 
 Configure upstream model backends (for example, Llama 4) through the generated Nova Intelligence UI as you would with the original Open WebUI deployment.
 
-> **Troubleshooting tip:** Seeing `failed to read dockerfile: open Dockerfile: no such file or directory` means the command was run from a directory that does not contain the project `Dockerfile`. Change into the cloned repository directory and rerun the command with the trailing `.` build context as shown above.
+> **Troubleshooting tip:** Seeing `failed to read dockerfile: open Dockerfile: no such file or directory` means the command was run from a directory that does not contain the project `Dockerfile`. Change into the cloned repository directory and rerun the command with the trailing `.` build context as shown above. The image is not published to Docker Hub, so `docker pull nova-intelligence:latest` will also fail until you build it locally.
+
+If you prefer a single command, the included `Makefile` exposes shortcuts:
+
+```bash
+make docker-build           # builds the image as nova-intelligence
+make docker-run             # runs the container on http://localhost:3000
+```
 
 ## SwiftUI host application
 
@@ -65,6 +85,13 @@ The Swift package now ships with a Linux-friendly CLI shim so you can make sure 
 cd swift/NovaIntelligenceApp
 swift build
 swift run
+```
+
+Equivalent Makefile helpers are also available:
+
+```bash
+make swift-build
+make swift-run
 ```
 
 `swift build` confirms the package compiles, while `swift run` executes the CLI stub that prints guidance for launching the full SwiftUI app on macOS or iOS hardware. These commands allow automated pipelines to exercise the package even though SwiftUI frameworks are unavailable on Linux.
