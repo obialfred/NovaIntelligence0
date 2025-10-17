@@ -105,7 +105,7 @@ private struct SettingsSheet: View {
     }
 }
 
-#Preview
+#if DEBUG
 struct ContentView_Previews: PreviewProvider {
     @State static var sampleURL = URL.defaultNovaURL
 
@@ -113,3 +113,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView(targetURL: $sampleURL)
     }
 }
+#endif
