@@ -1,0 +1,89 @@
+# Nova Intelligence Platform
+
+This repository contains the building blocks required to rebrand [Open WebUI](https://github.com/open-webui/open-webui) as **Nova Intelligence** and to provide a multiplatform SwiftUI shell that can host the branded experience on Apple devices.
+
+## Contents
+
+| Path | Description |
+| --- | --- |
+| `Dockerfile` | Builds a Nova-branded variant of the official Open WebUI container image. |
+| `swift/NovaIntelligenceApp` | SwiftUI application package capable of running on macOS and iOS. |
+
+## Nova-branded container image
+
+The `Dockerfile` extends the upstream Open WebUI image and performs the following:
+
+* Replaces human-visible strings so "Open WebUI" becomes "Nova Intelligence" everywhere in the bundle.
+* Updates backend defaults to prevent the original brand suffix from reappearing at runtime.
+* Renames custom HTTP headers to `X-Nova-*` variants for network consistency.
+* Removes unused OLED/Her themes from the compiled frontend and limits the theme picker to System/Dark/Light.
+* Scrubs any literal "(Open WebUI)" suffixes left in static assets.
+* Sets brand-focused default environment variables and allows optional asset injection at build time via the `NOVA_ASSETS_TARBALL` build argument.
+
+Build the image locally (from the repository root so Docker can find the bundled `Dockerfile`):
+
+```bash
+cd NovaIntelligence0            # skip if you are already inside the repo folder
+docker build -t nova-intelligence .
+```
+
+Run it with default ports:
+
+```bash
+docker run --rm -p 3000:8080 nova-intelligence
+```
+
+Configure upstream model backends (for example, Llama 4) through the generated Nova Intelligence UI as you would with the original Open WebUI deployment.
+
+> **Troubleshooting tip:** Seeing `failed to read dockerfile: open Dockerfile: no such file or directory` means the command was run from a directory that does not contain the project `Dockerfile`. Change into the cloned repository directory and rerun the command with the trailing `.` build context as shown above.
+
+## SwiftUI host application
+
+The Swift package `swift/NovaIntelligenceApp` exposes a minimal executable product that wraps the Nova Intelligence web experience inside a `WKWebView` while providing room for native controls such as a toolbar, address bar, and settings sheet.
+
+### Features
+
+* **Adaptive navigation:** A Nova-branded sidebar and toolbar scale from iPhone to iPad to macOS, keeping workspaces a tap away.
+* **Configurable endpoint:** Users can adjust the backend URL via the in-app address bar, with validation helpers to normalize user input.
+* **Workspace persistence:** Opt-in settings remember the last visited Nova workspace and reopen it on launch.
+* **Extensible preferences:** `@AppStorage`-backed toggles demonstrate how to persist Nova-specific behaviors such as auto-launch and native chrome.
+
+### Running in Xcode
+
+1. Open the folder `swift/NovaIntelligenceApp` in Xcode 15 or newer (`File → Open…` or open the `Package.swift` file directly).
+2. Select the `NovaIntelligenceApp` scheme.
+3. Choose the desired destination (iOS Simulator or “My Mac”).
+4. Press **Run** to launch the hosted Nova Intelligence experience.
+
+To point the shell at a production deployment, update the default URL in `NovaIntelligenceApp.swift` or adjust it at runtime through the address bar.
+
+### Command-line verification (Linux or CI)
+
+The Swift package now ships with a Linux-friendly CLI shim so you can make sure it builds in non-Apple environments (including this development container and continuous integration runners). From the repository root:
+
+```bash
+cd swift/NovaIntelligenceApp
+swift build
+swift run
+```
+
+`swift build` confirms the package compiles, while `swift run` executes the CLI stub that prints guidance for launching the full SwiftUI app on macOS or iOS hardware. These commands allow automated pipelines to exercise the package even though SwiftUI frameworks are unavailable on Linux.
+
+### Next steps
+
+* Integrate secure authentication flows shared with the Docker deployment (e.g., OAuth, API tokens).
+* Package the SwiftUI app as a signed `.app` bundle and submit to TestFlight for limited testing (<50 users) while securing the necessary enterprise license.
+* When the Nova Intelligence LLM is ready, update the backend configuration to use the new inference endpoints without altering the Swift client.
+
+## Syncing your local work to GitHub
+
+All artifacts in this repository start on your machine. To publish updates to your private GitHub fork or origin repository:
+
+```bash
+git status                     # review pending changes
+git add <files>                # stage the updates you want to share
+git commit -m "Describe change"
+git push origin <branch-name>  # replace with your working branch
+```
+
+If `git push` reports authentication issues, ensure your GitHub CLI session or personal access token has permission to update the target repository.
