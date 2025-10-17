@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 import WebKit
 
@@ -139,3 +140,4 @@ extension Color {
         )
     }
 }
+#endif
