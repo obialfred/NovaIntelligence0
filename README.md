@@ -7,6 +7,8 @@ This repository contains the building blocks required to rebrand [Open WebUI](ht
 | Path | Description |
 | --- | --- |
 | `Dockerfile` | Builds a Nova-branded variant of the official Open WebUI container image. |
+| `docs/llama4-endpoint-setup.md` | Step-by-step instructions for wiring a Llama 4 endpoint into Nova Intelligence. |
+| `docs/falcon-endpoint-setup.md` | Guide for running a local Falcon model as the inaugural Nova I-Go assistant. |
 | `swift/NovaIntelligenceApp` | SwiftUI application package capable of running on macOS, iOS, and tvOS. |
 
 ## Zero-dependency offline preview
