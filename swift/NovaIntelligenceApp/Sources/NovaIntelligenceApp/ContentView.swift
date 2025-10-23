@@ -34,11 +34,11 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Label("Nova Intelligence", systemImage: "sparkles")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.white)
+                    .novaForeground(Color.white)
                     .labelStyle(SidebarLabelStyle())
                 Text("beta")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.novaAccent.opacity(0.8))
+                    .novaForeground(Color.novaAccent.opacity(0.8))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
@@ -55,7 +55,7 @@ struct ContentView: View {
                         icon: "folder",
                         label: item.name,
                         trailing: Text("\(item.chatCount)")
-                            .foregroundStyle(Color.novaMuted)
+                            .novaForeground(Color.novaMuted)
                             .font(.system(size: 11, weight: .semibold))
                     )
                 },
@@ -95,7 +95,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Select a model")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.novaMuted)
+                        .novaForeground(Color.novaMuted)
                     Menu {
                         ForEach(SampleData.models, id: \.self) { model in
                             Button(model) { selectedModel = model }
@@ -103,7 +103,7 @@ struct ContentView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Text(selectedModel)
-                                .foregroundStyle(Color.white)
+                                .novaForeground(Color.white)
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 12, weight: .semibold))
                         }
@@ -126,7 +126,7 @@ struct ContentView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(selectedWorkspace)
-                            .foregroundStyle(Color.white)
+                            .novaForeground(Color.white)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .semibold))
                     }
@@ -142,7 +142,7 @@ struct ContentView: View {
                 Button(action: { isShowingSettings.toggle() }) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.white)
+                        .novaForeground(Color.white)
                         .padding(10)
                         .background(Circle().fill(Color.novaSurface))
                         .overlay(Circle().stroke(Color.novaBorder, lineWidth: 1))
@@ -173,7 +173,7 @@ private struct SidebarLabelStyle: LabelStyle {
         HStack(spacing: 10) {
             configuration.icon
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.novaAccent)
+                .novaForeground(Color.novaAccent)
             configuration.title
         }
     }
@@ -194,7 +194,7 @@ private struct SidebarSection: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title.uppercased())
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Color.novaMuted.opacity(0.8))
+                .novaForeground(Color.novaMuted.opacity(0.8))
                 .padding(.leading, 4)
 
             ForEach(items) { item in
@@ -222,10 +222,10 @@ private struct SidebarRow: View {
             HStack(spacing: 12) {
                 Image(systemName: item.icon)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.white : Color.novaMuted)
+                    .novaForeground(isSelected ? Color.white : Color.novaMuted)
                 Text(item.label)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isSelected ? Color.white : Color.novaMuted)
+                    .novaForeground(isSelected ? Color.white : Color.novaMuted)
                 Spacer()
                 if let trailing = item.trailing {
                     trailing
@@ -250,10 +250,10 @@ private struct SidebarButton: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.novaMuted)
+                .novaForeground(Color.novaMuted)
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.novaMuted)
+                .novaForeground(Color.novaMuted)
         }
     }
 }
@@ -271,10 +271,10 @@ private struct ChatPreviewCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Hello, Obi")
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.white)
+                        .novaForeground(Color.white)
                     Text("What are 5 creative things I could do with my kids' art? I don't want to throw them away, but it's also so much clutter!")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.white.opacity(0.85))
+                        .novaForeground(Color.white.opacity(0.85))
                         .lineSpacing(4)
                 }
                 Spacer()
@@ -287,12 +287,12 @@ private struct ChatPreviewCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Suggested")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.novaMuted)
+                    .novaForeground(Color.novaMuted)
                 HStack(spacing: 12) {
                     ForEach(SampleData.suggestions, id: \.self) { suggestion in
                         Text(suggestion)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color.white)
+                            .novaForeground(Color.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(
@@ -344,14 +344,14 @@ private struct ComposerView: View {
                         TextEditor(text: $text)
                             .font(.system(size: 14))
                             .scrollContentBackground(.hidden)
-                            .foregroundStyle(Color.white)
+                            .novaForeground(Color.white)
                             .frame(minHeight: 80, maxHeight: 120)
                             .padding(.vertical, 18)
                         Spacer()
                         Button(action: {}) {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.system(size: 30))
-                                .foregroundStyle(Color.novaAccent)
+                                .novaForeground(Color.novaAccent)
                         }
                         .buttonStyle(.plain)
                         .padding(.trailing, 18)
@@ -373,7 +373,7 @@ private struct AttachButton: View {
             Text(label)
                 .font(.system(size: 12, weight: .medium))
         }
-        .foregroundStyle(Color.novaMuted)
+        .novaForeground(Color.novaMuted)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
@@ -394,7 +394,7 @@ private struct HoverIconButton: View {
     var body: some View {
         Image(systemName: systemName)
             .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(Color.white)
+            .novaForeground(Color.white)
             .frame(width: 44, height: 44)
             .background(
                 RoundedRectangle(cornerRadius: 14)
@@ -475,12 +475,12 @@ private struct SettingsOverlay: View {
                 HStack {
                     Text("Settings")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Color.white)
+                        .novaForeground(Color.white)
                     Spacer()
                     Button(action: { isPresented = false }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Color.white)
+                            .novaForeground(Color.white)
                             .padding(8)
                     }
                     .buttonStyle(.plain)
@@ -504,7 +504,7 @@ private struct SettingsOverlay: View {
                     Button(action: { isPresented = false }) {
                         Text("Save")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.white)
+                            .novaForeground(Color.white)
                             .padding(.horizontal, 26)
                             .padding(.vertical, 10)
                             .background(RoundedRectangle(cornerRadius: 20).fill(Color.novaAccent))
@@ -528,12 +528,12 @@ private struct SettingsOverlay: View {
                     HStack {
                         Text(category.title)
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(selection == category ? Color.white : Color.novaMuted)
+                            .novaForeground(selection == category ? Color.white : Color.novaMuted)
                         Spacer()
                         if category == .search {
                             Image(systemName: "magnifyingglass")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(Color.novaMuted)
+                                .novaForeground(Color.novaMuted)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -576,7 +576,7 @@ private struct SettingsOverlay: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("System Prompt")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.novaMuted)
+                            .novaForeground(Color.novaMuted)
                         RoundedRectangle(cornerRadius: 18)
                             .fill(Color.novaSurfaceElevated)
                             .overlay(
@@ -586,7 +586,7 @@ private struct SettingsOverlay: View {
                             .overlay(
                                 TextEditor(text: $systemPrompt)
                                     .font(.system(size: 13))
-                                    .foregroundStyle(Color.white)
+                                    .novaForeground(Color.white)
                                     .padding(16)
                                     .scrollContentBackground(.hidden)
                             )
@@ -614,7 +614,7 @@ private struct SettingsOverlay: View {
                                 .font(.system(size: 15, weight: .semibold))
                             Text("Share your background and interests")
                                 .font(.system(size: 13))
-                                .foregroundStyle(Color.novaMuted)
+                                .novaForeground(Color.novaMuted)
                         }
                     }
 
@@ -627,10 +627,10 @@ private struct SettingsOverlay: View {
                 SettingsSection(title: "Nova Intelligence Version") {
                     Text("0.6.34")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.white)
+                        .novaForeground(Color.white)
                     Text(SampleData.licenseText)
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.novaMuted)
+                        .novaForeground(Color.novaMuted)
                         .lineSpacing(4)
                 }
 
@@ -638,7 +638,7 @@ private struct SettingsOverlay: View {
                 SettingsSection(title: selection.title) {
                     Text("Coming soon")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.novaMuted)
+                        .novaForeground(Color.novaMuted)
                 }
             }
 
@@ -658,7 +658,7 @@ private struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.white)
+                .novaForeground(Color.white)
             VStack(alignment: .leading, spacing: 16) {
                 content
             }
@@ -678,7 +678,7 @@ private struct SettingsLinkRow: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .bold))
         }
-        .foregroundStyle(accent)
+        .novaForeground(accent)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
@@ -764,6 +764,17 @@ private extension Color {
 
 private extension SampleData {
     static let licenseText = "Nova Intelligence (beta) incorporates components inspired by the Open WebUI project. The Nova Intelligence desktop shell recreates the interface natively in SwiftUI while retaining the original interaction patterns, shortcuts, and layout conventions."
+}
+
+private extension View {
+    @ViewBuilder
+    func novaForeground(_ color: Color) -> some View {
+        if #available(macOS 14.0, iOS 17.0, tvOS 17.0, *) {
+            self.foregroundStyle(color)
+        } else {
+            self.foregroundColor(color)
+        }
+    }
 }
 
 #if DEBUG
