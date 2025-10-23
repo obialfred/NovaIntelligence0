@@ -15,10 +15,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "NovaIntelligenceApp",
-            path: "Sources",
-            resources: [
-                .process("NovaIntelligenceApp/Resources")
-            ]
+            path: "Sources"
         )
     ]
 )

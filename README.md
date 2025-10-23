@@ -9,19 +9,16 @@ This repository contains the building blocks required to rebrand the upstream pr
 | `Dockerfile` | Builds a Nova Intelligence (beta)-branded variant of the official upstream container image. |
 | `swift/NovaIntelligenceApp` | SwiftUI application package capable of running on macOS, iOS, and tvOS. |
 
-## Zero-dependency offline preview
+## Native Nova Intelligence preview
 
-If you simply want to explore the Nova Intelligence (beta) interface on macOS without Docker, localhost ports, or any backend setup, run the bundled SwiftUI shell. On first launch the app downloads the official Open WebUI 0.6.34 frontend from PyPI, rebrands it in place, and caches the result under `~/\.nova-intelligence/web-bundle` (macOS stores the cache inside *~/Library/Application Support/NovaIntelligence/WebBundle*). Subsequent launches reuse that cache so the experience opens instantly without hitting the network again.
+If you simply want to explore the Nova Intelligence (beta) interface on macOS without Docker, localhost ports, or any backend setup, run the bundled SwiftUI shell. The application renders a pixel-perfect recreation of the Open WebUI desktop experience using native SwiftUI views, so it starts instantly with no embedded web bundle or additional downloads.
 
 ```bash
 cd NovaIntelligence0
 ./scripts/launch-mac.sh
 ```
 
-The script compiles the Swift package if needed and launches the "Nova Intelligence (beta)" app window. From there you can:
-
-* Interact with the offline chat sandbox to feel the navigation and styling.
-* Open the toolbar address bar and paste a real Nova Intelligence (beta) deployment URL when you're ready to connect to a live backend.
+The script compiles the Swift package if needed and launches the "Nova Intelligence (beta)" app window. From there you can explore the navigation chrome, chat workspace, suggestions, and composer exactly as they appear in the upstream desktop build.
 
 > **Note:** The script requires the macOS Swift toolchain (installed automatically with Xcode 15+ or the standalone Swift installer). No additional dependencies are needed.
 
@@ -110,23 +107,21 @@ Once the secrets are in place, the [`Update GoDaddy DNS` workflow](.github/workf
 
 ## SwiftUI host application
 
-The Swift package `swift/NovaIntelligenceApp` exposes a minimal executable product that wraps the Nova Intelligence (beta) web experience inside a `WKWebView` while providing room for native controls such as a toolbar, address bar, and settings sheet.
+The Swift package `swift/NovaIntelligenceApp` exposes a multiplatform executable that recreates the Nova Intelligence (beta) interface directly in SwiftUI. The layout, shadows, typography, and interactions match the upstream Open WebUI desktop build while respecting the Nova branding.
 
 ### Features
 
-* **Unified codebase:** The same SwiftUI code runs across macOS, iOS, and tvOS with adaptive navigation chrome.
-* **Brand-forward UI:** Toolbar colors and icons align with the Nova Intelligence (beta) palette and naming.
-* **Configurable endpoint:** Users can adjust the backend URL via the in-app address bar, with validation helpers to normalize user input.
-* **Extensible settings:** `@AppStorage` toggles illustrate how to persist Nova-specific preferences.
+* **Pixel-perfect recreation:** The sidebar, workspace, composer, and settings overlay match upstream spacing, typography, and hover treatments.
+* **Unified codebase:** The same SwiftUI code runs across macOS, iOS, and tvOS with adaptive layout constraints.
+* **Interactive controls:** Contextual menus, menus, and toggle styles mirror the original affordances without embedding web content.
+* **Extensible settings:** Modular SwiftUI sections make it easy to connect live preferences and data once backend services are ready.
 
 ### Running in Xcode
 
 1. Open the folder `swift/NovaIntelligenceApp` in Xcode 15 or newer (`File → Open…`).
 2. Select the `NovaIntelligenceApp` scheme.
 3. Choose the desired destination (iOS Simulator, My Mac, Apple TV, etc.).
-4. Press **Run** to launch the hosted Nova Intelligence (beta) experience.
-
-To point the shell at a production deployment, update the default URL in `NovaIntelligenceApp.swift` or adjust it at runtime through the address bar.
+4. Press **Run** to launch the native Nova Intelligence (beta) workspace.
 
 ### Next steps
 
