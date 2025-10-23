@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 
 struct ContentView: View {
@@ -113,4 +114,5 @@ struct ContentView_Previews: PreviewProvider {
         ContentView(targetURL: $sampleURL)
     }
 }
+#endif
 #endif

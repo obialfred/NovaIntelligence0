@@ -1,0 +1,31 @@
+services:
+  nova-intelligence:
+    build: .
+    image: nova-intelligence:latest
+    container_name: nova-intelligence
+    environment:
+      WEBUI_NAME: "Nova Intelligence (beta)"
+      WEBUI_URL: "${NOVA_PUBLIC_URL:-https://novaring.tech}"
+    volumes:
+      - nova_data:/app/backend/data
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2
+    container_name: nova-intelligence-proxy
+    depends_on:
+      - nova-intelligence
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN:-novaring.tech}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  nova_data:
+  caddy_data:
+  caddy_config:

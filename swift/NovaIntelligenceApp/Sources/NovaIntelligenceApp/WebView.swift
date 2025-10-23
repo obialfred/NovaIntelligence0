@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 import WebKit
 
@@ -83,7 +84,7 @@ private extension WKWebViewConfiguration {
 
 extension URL {
     static var defaultNovaURL: URL {
-        if let offlineDemo = Bundle.module.url(forResource: "index", withExtension: "html") {
+        if let offlineDemo = try? OpenWebUIBundle.indexURL() {
             return offlineDemo
         }
         if let primary = URL(string: "https://nova.intelligence.local") {
@@ -139,3 +140,4 @@ extension Color {
         )
     }
 }
+#endif
