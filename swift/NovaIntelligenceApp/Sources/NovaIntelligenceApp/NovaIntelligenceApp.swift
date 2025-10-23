@@ -4,14 +4,38 @@ import SwiftUI
 @main
 struct NovaIntelligenceApp: App {
     @State private var targetURL = URL.defaultNovaURL
+    @State private var hasScheduledPreparation = false
 
     var body: some Scene {
         WindowGroup {
             ContentView(targetURL: $targetURL)
+                .task {
+                    await prepareOfflineAssetsIfNeeded()
+                }
         }
         #if os(macOS)
         .windowStyle(.automatic)
         #endif
+    }
+
+    @MainActor
+    private func prepareOfflineAssetsIfNeeded() async {
+        guard !hasScheduledPreparation else { return }
+        hasScheduledPreparation = true
+
+        do {
+            let offlineURL = try await Task.detached(priority: .userInitiated) {
+                try OpenWebUIBundle.indexURL()
+            }.value
+
+            if targetURL != offlineURL {
+                targetURL = offlineURL
+            }
+        } catch {
+            #if DEBUG
+            print("Failed to prepare Nova Intelligence (beta) bundle:", error.localizedDescription)
+            #endif
+        }
     }
 }
 #else

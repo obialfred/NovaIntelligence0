@@ -25,6 +25,21 @@ enum OpenWebUIBundle {
     private static let completionMarker = ".prepared"
     private static let preparationScriptName = "prepare_bundle"
 
+    static func cachedIndexURL() -> URL? {
+        guard let directory = (try? preparedDirectoryIfPresent()) ?? nil else {
+            return nil
+        }
+
+        let indexURL = directory.appendingPathComponent("index.html")
+        guard FileManager.default.fileExists(atPath: indexURL.path) else {
+            return nil
+        }
+
+        try? ensureOfflineScaffolding(in: directory)
+
+        return indexURL
+    }
+
     static func indexURL() throws -> URL {
         let directory = try ensureAssetDirectory()
         let indexURL = directory.appendingPathComponent("index.html")
@@ -36,15 +51,9 @@ enum OpenWebUIBundle {
 
     static func ensureAssetDirectory() throws -> URL {
         let fileManager = FileManager.default
-        let extractionRoot = try resolveExtractionRoot()
-        let directoryName = "NovaIntelligence-\(bundleVersion)"
-        let extractionDirectory = extractionRoot.appendingPathComponent(directoryName, isDirectory: true)
-        let marker = extractionDirectory.appendingPathComponent(completionMarker)
+        let (extractionDirectory, marker) = try bundlePaths()
 
-        if let markerData = try? Data(contentsOf: marker),
-           let recordedVersion = String(data: markerData, encoding: .utf8),
-           recordedVersion == bundleVersion,
-           fileManager.fileExists(atPath: extractionDirectory.path) {
+        if directoryIsPrepared(extractionDirectory, marker: marker) {
             try ensureOfflineScaffolding(in: extractionDirectory)
             return extractionDirectory
         }
@@ -158,6 +167,37 @@ enum OpenWebUIBundle {
         #endif
         try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
         return base
+    }
+
+    private static func bundlePaths() throws -> (directory: URL, marker: URL) {
+        let extractionRoot = try resolveExtractionRoot()
+        let directoryName = "NovaIntelligence-\(bundleVersion)"
+        let extractionDirectory = extractionRoot.appendingPathComponent(directoryName, isDirectory: true)
+        let marker = extractionDirectory.appendingPathComponent(completionMarker)
+        return (extractionDirectory, marker)
+    }
+
+    private static func preparedDirectoryIfPresent() throws -> URL? {
+        let (directory, marker) = try bundlePaths()
+
+        guard directoryIsPrepared(directory, marker: marker) else {
+            return nil
+        }
+
+        return directory
+    }
+
+    private static func directoryIsPrepared(_ directory: URL, marker: URL) -> Bool {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: directory.path),
+              fileManager.fileExists(atPath: marker.path) else { return false }
+
+        guard let recordedVersion = try? String(contentsOf: marker, encoding: .utf8),
+              recordedVersion == bundleVersion else {
+            return false
+        }
+
+        return true
     }
 }
 

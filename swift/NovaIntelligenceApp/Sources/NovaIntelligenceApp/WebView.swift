@@ -84,7 +84,7 @@ private extension WKWebViewConfiguration {
 
 extension URL {
     static var defaultNovaURL: URL {
-        if let offlineDemo = try? OpenWebUIBundle.indexURL() {
+        if let offlineDemo = OpenWebUIBundle.cachedIndexURL() {
             return offlineDemo
         }
         if let primary = URL(string: "https://nova.intelligence.local") {
