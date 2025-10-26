@@ -1,0 +1,6 @@
+# Swift Package Manager build artifacts
+swift/NovaIntelligenceApp/.build/
+swift/NovaIntelligenceApp/.swiftpm/
+
+# SwiftPM resolution file can be regenerated
+swift/NovaIntelligenceApp/Package.resolved

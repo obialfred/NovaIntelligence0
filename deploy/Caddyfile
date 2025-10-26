@@ -1,0 +1,8 @@
+{$DOMAIN} {
+    encode gzip
+    reverse_proxy nova-intelligence:8080
+}
+
+www.{$DOMAIN} {
+    redir https://{$DOMAIN}{uri}
+}
