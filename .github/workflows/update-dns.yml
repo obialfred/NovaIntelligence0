@@ -1,0 +1,63 @@
+name: Update GoDaddy DNS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  update-dns:
+    runs-on: ubuntu-latest
+    env:
+      DOMAIN: novaring.tech
+      TTL: 600
+    steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Upsert DNS records at GoDaddy
+        env:
+          GODADDY_KEY: ${{ secrets.GODADDY_KEY }}
+          GODADDY_SECRET: ${{ secrets.GODADDY_SECRET }}
+          APEX_IP: ${{ secrets.APEX_IP }}
+          EXTRA_CNAME_JSON: ${{ secrets.EXTRA_CNAME_JSON }}
+        run: |
+          upsert() {
+            TYPE="$1"; NAME="$2"; DATA="$3"
+            BODY="[ { \"data\": \"${DATA}\", \"ttl\": ${TTL} } ]"
+            curl -sS -X PUT \
+              "https://api.godaddy.com/v1/domains/${DOMAIN}/records/${TYPE}/${NAME}" \
+              -H "Authorization: sso-key ${GODADDY_KEY}:${GODADDY_SECRET}" \
+              -H "Content-Type: application/json" \
+              -d "${BODY}" >/dev/null
+            echo "Upserted ${TYPE} ${NAME} -> ${DATA}"
+          }
+
+          # APEX: A @ (replace the current 'Parked' A record)
+          if [ -n "${APEX_IP}" ]; then
+            upsert A @ "${APEX_IP}"
+            # Keep www -> apex
+            upsert CNAME www "${DOMAIN}"
+          else
+            echo "No APEX_IP provided; skipping A @"
+            # Still ensure www -> apex exists
+            upsert CNAME www "${DOMAIN}"
+          fi
+
+          # Optional: extra subdomain CNAMEs in JSON
+          if [ -n "${EXTRA_CNAME_JSON}" ]; then
+            echo "${EXTRA_CNAME_JSON}" | jq -c '.[]' | while read row; do
+              NAME=$(echo "$row" | jq -r '.name')
+              TARGET=$(echo "$row" | jq -r '.target')
+              [ -n "${NAME}" ] && [ -n "${TARGET}" ] && upsert CNAME "${NAME}" "${TARGET}"
+            done
+          fi
+
+      - name: Verify (read back the key records)
+        env:
+          GODADDY_KEY: ${{ secrets.GODADDY_KEY }}
+          GODADDY_SECRET: ${{ secrets.GODADDY_SECRET }}
+        run: |
+          curl -sS "https://api.godaddy.com/v1/domains/${{ env.DOMAIN }}/records" \
+            -H "Authorization: sso-key ${GODADDY_KEY}:${GODADDY_SECRET}" \
+          | jq '[.[] | select((.type=="A" and .name=="@") or (.type=="CNAME" and .name=="www"))]'
