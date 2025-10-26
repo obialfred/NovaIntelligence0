@@ -1,15 +1,30 @@
+#if canImport(SwiftUI)
 import SwiftUI
 
 @main
 struct NovaIntelligenceApp: App {
-    @State private var targetURL = URL.defaultNovaURL
-
     var body: some Scene {
         WindowGroup {
-            ContentView(targetURL: $targetURL)
+            ContentView()
+                .frame(minWidth: 1180, minHeight: 720)
         }
         #if os(macOS)
-        .windowStyle(.automatic)
+        .windowStyle(.hiddenTitleBar)
         #endif
     }
 }
+#else
+import Foundation
+
+@main
+enum NovaIntelligenceLinuxApp {
+    static func main() {
+        do {
+            try LinuxPreviewServer.run()
+        } catch {
+            fputs("Failed to launch Nova Intelligence (beta) preview: \(error)\n", stderr)
+            exit(EXIT_FAILURE)
+        }
+    }
+}
+#endif
