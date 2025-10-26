@@ -3,22 +3,34 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var isShowingSettings = false
-    @State private var selectedModel = "Nova Ultra"
-    @State private var selectedWorkspace = "Default"
-    @State private var composerText = "What are 5 creative things I could do with my kids' art?"
-    @State private var selectedFolder: UUID? = SampleData.folders.first?.id
+    @State private var selectedConversationID: UUID = SampleData.conversations.first?.id ?? UUID()
+    @State private var searchText = ""
+    @State private var selectedModel: String = SampleData.models.first ?? "Nova Ultra"
+    @State private var selectedWorkspace: String = SampleData.workspaces.first ?? "Default"
+    @State private var composerText = SampleData.defaultPrompt
 
     var body: some View {
-        ZStack {
-            Color.novaBackground.ignoresSafeArea()
+        ZStack(alignment: .center) {
+            Color.novaWindow.ignoresSafeArea()
+
             HStack(spacing: 0) {
-                primarySidebar
-                Divider().overlay(Color.novaBorder)
-                mainSurface
-                Divider().overlay(Color.novaBorder)
-                secondarySidebar
+                PrimarySidebar(
+                    selectedConversationID: $selectedConversationID,
+                    searchText: $searchText,
+                    conversations: SampleData.conversations
+                )
+                Divider().overlay(Color.novaDivider)
+                ConversationColumn(
+                    conversation: SampleData.conversations.first { $0.id == selectedConversationID } ?? SampleData.conversations[0],
+                    selectedModel: $selectedModel,
+                    selectedWorkspace: $selectedWorkspace,
+                    composerText: $composerText,
+                    showSettings: $isShowingSettings
+                )
+                Divider().overlay(Color.novaDivider)
+                SecondaryColumn()
             }
-            .frame(minHeight: 600)
+            .frame(minHeight: 720)
             .preferredColorScheme(.dark)
 
             if isShowingSettings {
@@ -28,293 +40,534 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: isShowingSettings)
     }
+}
 
-    private var primarySidebar: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Nova Intelligence", systemImage: "sparkles")
-                    .font(.system(size: 16, weight: .semibold))
-                    .novaForeground(Color.white)
-                    .labelStyle(SidebarLabelStyle())
-                Text("beta")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .novaForeground(Color.novaAccent.opacity(0.8))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule().fill(Color.novaAccent.opacity(0.2))
-                    )
-            }
+// MARK: - Primary Sidebar
 
-            SidebarSection(title: "General", items: SampleData.generalItems)
-            SidebarSection(
-                title: "Folders",
-                items: SampleData.folders.map { item in
-                    SidebarItem(
-                        id: item.id,
-                        icon: "folder",
-                        label: item.name,
-                        trailing: Text("\(item.chatCount)")
-                            .novaForeground(Color.novaMuted)
-                            .font(.system(size: 11, weight: .semibold))
-                    )
-                },
-                selection: $selectedFolder
-            )
+private struct PrimarySidebar: View {
+    @Binding var selectedConversationID: UUID
+    @Binding var searchText: String
+    let conversations: [Conversation]
 
-            Spacer()
-
-            VStack(alignment: .leading, spacing: 12) {
-                SidebarButton(icon: "trash", label: "Trash")
-                SidebarButton(icon: "archivebox", label: "Archive")
-                SidebarButton(icon: "questionmark.circle", label: "Help")
-            }
-        }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 28)
-        .frame(width: 280, alignment: .leading)
-        .background(Color.novaSidebar)
-    }
-
-    private var mainSurface: some View {
-        VStack(spacing: 24) {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
             header
-            ChatPreviewCard(composerText: $composerText)
-            Spacer(minLength: 0)
-            ComposerView(text: $composerText)
+            newChatButton
+            searchField
+            pinnedSection
+            Divider().overlay(Color.novaDivider)
+                .padding(.horizontal, -20)
+            recentSection
+            Spacer()
+            footer
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.novaBackground)
+        .padding(.horizontal, 24)
+        .padding(.top, 28)
+        .padding(.bottom, 24)
+        .frame(width: 312, alignment: .top)
+        .background(Color.novaSidebar)
     }
 
     private var header: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Select a model")
-                        .font(.system(size: 13, weight: .semibold))
-                        .novaForeground(Color.novaMuted)
-                    Menu {
-                        ForEach(SampleData.models, id: \.self) { model in
-                            Button(model) { selectedModel = model }
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(selectedModel)
-                                .novaForeground(Color.white)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 12, weight: .semibold))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.novaSurface))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.novaBorder, lineWidth: 1)
-                        )
-                    }
-                }
-
-                Spacer()
-
-                Menu {
-                    ForEach(SampleData.workspaces, id: \.self) { workspace in
-                        Button(workspace) { selectedWorkspace = workspace }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(selectedWorkspace)
-                            .novaForeground(Color.white)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.novaSurface))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.novaBorder, lineWidth: 1)
-                    )
-                }
-
-                Button(action: { isShowingSettings.toggle() }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 15, weight: .semibold))
-                        .novaForeground(Color.white)
-                        .padding(10)
-                        .background(Circle().fill(Color.novaSurface))
-                        .overlay(Circle().stroke(Color.novaBorder, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color.novaAccent)
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 16, weight: .semibold))
+                        .novaForeground(Color.novaSidebarText)
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Nova Intelligence")
+                    .font(.system(size: 16, weight: .semibold))
+                    .novaForeground(Color.white)
+                Text("beta")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .novaForeground(Color.novaAccent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.novaAccent.opacity(0.16)))
             }
-
-            Divider().overlay(Color.novaBorder)
-        }
-    }
-
-    private var secondarySidebar: some View {
-        VStack(spacing: 20) {
-            HoverIconButton(systemName: "rectangle.and.pencil.and.ellipsis")
-            HoverIconButton(systemName: "slider.horizontal.3")
-            HoverIconButton(systemName: "bell")
             Spacer()
-            HoverIconButton(systemName: "person.crop.circle")
         }
-        .padding(.vertical, 32)
-        .frame(width: 88)
-        .background(Color.novaSidebar)
     }
-}
 
-private struct SidebarLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    private var newChatButton: some View {
+        Button(action: {}) {
+            HStack(spacing: 12) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 18, weight: .bold))
+                Text("New Chat")
+                    .font(.system(size: 15, weight: .semibold))
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.novaButtonGradient)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .novaForeground(Color.white)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var searchField: some View {
         HStack(spacing: 10) {
-            configuration.icon
-                .font(.system(size: 16, weight: .semibold))
-                .novaForeground(Color.novaAccent)
-            configuration.title
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .medium))
+                .novaForeground(Color.novaMuted)
+            TextField("Search", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
         }
-    }
-}
-
-private struct SidebarSection: View {
-    let title: String
-    var items: [SidebarItem]
-    var selection: Binding<UUID?>?
-
-    init(title: String, items: [SidebarItem], selection: Binding<UUID?>? = nil) {
-        self.title = title
-        self.items = items
-        self.selection = selection
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title.uppercased())
-                .font(.system(size: 11, weight: .bold))
-                .novaForeground(Color.novaMuted.opacity(0.8))
-                .padding(.leading, 4)
-
-            ForEach(items) { item in
-                SidebarRow(item: item, isSelected: selection?.wrappedValue == item.id) {
-                    selection?.wrappedValue = item.id
+    private var pinnedSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(title: "Pinned")
+            ForEach(conversations.filter { $0.isPinned }) { conversation in
+                ConversationRow(
+                    conversation: conversation,
+                    isSelected: selectedConversationID == conversation.id
+                ) {
+                    selectedConversationID = conversation.id
                 }
             }
         }
     }
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(title: "Recent")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(conversations.filter { !$0.isPinned }) { conversation in
+                        ConversationRow(
+                            conversation: conversation,
+                            isSelected: selectedConversationID == conversation.id
+                        ) {
+                            selectedConversationID = conversation.id
+                        }
+                    }
+                }
+                .padding(.bottom, 12)
+            }
+        }
+    }
+
+    private var footer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider().overlay(Color.novaDivider)
+                .padding(.horizontal, -20)
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .novaForeground(Color.novaMuted)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Obi")
+                        .font(.system(size: 13, weight: .semibold))
+                        .novaForeground(Color.white)
+                    Text("Nova Intelligence Team")
+                        .font(.system(size: 11, weight: .medium))
+                        .novaForeground(Color.novaMuted)
+                }
+                Spacer()
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .semibold))
+                    .novaForeground(Color.novaMuted)
+            }
+        }
+    }
+
+    private func sectionHeader(title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .novaForeground(Color.novaSectionHeader)
+            .padding(.leading, 4)
+    }
 }
 
-private struct SidebarRow: View {
-    let item: SidebarItem
-    var isSelected: Bool
+private struct ConversationRow: View {
+    let conversation: Conversation
+    let isSelected: Bool
     var action: () -> Void
-
-    init(item: SidebarItem, isSelected: Bool, action: @escaping () -> Void = {}) {
-        self.item = item
-        self.isSelected = isSelected
-        self.action = action
-    }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: item.icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .novaForeground(isSelected ? Color.white : Color.novaMuted)
-                Text(item.label)
-                    .font(.system(size: 14, weight: .medium))
-                    .novaForeground(isSelected ? Color.white : Color.novaMuted)
-                Spacer()
-                if let trailing = item.trailing {
-                    trailing
+            HStack(alignment: .center, spacing: 12) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(conversation.accent.opacity(0.24))
+                    .overlay(
+                        Image(systemName: conversation.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .novaForeground(conversation.accent)
+                    )
+                    .frame(width: 32, height: 32)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(conversation.title)
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .lineLimit(1)
+                    Text(conversation.preview)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .lineLimit(1)
+                        .novaForeground(Color.novaMuted)
                 }
+                Spacer()
+                Text(conversation.relativeDate)
+                    .font(.system(size: 11, weight: .medium))
+                    .novaForeground(Color.novaMuted)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.novaSurface : Color.clear)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? Color.white.opacity(0.08) : Color.clear)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.white.opacity(0.12) : Color.clear, lineWidth: 1)
+            )
+            .novaForeground(Color.white)
         }
         .buttonStyle(.plain)
     }
 }
 
-private struct SidebarButton: View {
-    let icon: String
-    let label: String
+// MARK: - Conversation Column
+
+private struct ConversationColumn: View {
+    let conversation: Conversation
+    @Binding var selectedModel: String
+    @Binding var selectedWorkspace: String
+    @Binding var composerText: String
+    @Binding var showSettings: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .novaForeground(Color.novaMuted)
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .novaForeground(Color.novaMuted)
+        VStack(alignment: .leading, spacing: 0) {
+            ConversationToolbar(
+                selectedModel: $selectedModel,
+                selectedWorkspace: $selectedWorkspace,
+                showSettings: $showSettings
+            )
+            Divider().overlay(Color.novaDivider)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    ConversationHeader(conversation: conversation)
+                    ForEach(conversation.messages) { message in
+                        MessageRow(message: message)
+                    }
+                    SuggestionsCluster(suggestions: conversation.suggestions)
+                }
+                .padding(.horizontal, 36)
+                .padding(.vertical, 32)
+            }
+            Divider().overlay(Color.novaDivider)
+            ComposerView(text: $composerText)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.novaContent)
+    }
+}
+
+private struct ConversationToolbar: View {
+    @Binding var selectedModel: String
+    @Binding var selectedWorkspace: String
+    @Binding var showSettings: Bool
+
+    var body: some View {
+        HStack(spacing: 16) {
+            ModelPill(title: selectedModel) {
+                Menu {
+                    ForEach(SampleData.models, id: \.self) { model in
+                        Button(model) { selectedModel = model }
+                    }
+                } label: {
+                    ModelPillLabel(text: selectedModel)
+                }
+                .menuStyle(.borderlessButton)
+            }
+
+            WorkspacePill(title: selectedWorkspace) {
+                Menu {
+                    ForEach(SampleData.workspaces, id: \.self) { workspace in
+                        Button(workspace) { selectedWorkspace = workspace }
+                    }
+                } label: {
+                    ModelPillLabel(text: selectedWorkspace)
+                }
+                .menuStyle(.borderlessButton)
+            }
+
+            Spacer()
+
+            ToolbarIconButton(systemName: "rectangle.and.pencil.and.ellipsis")
+            ToolbarIconButton(systemName: "slider.horizontal.3")
+            ToolbarIconButton(systemName: "bell")
+            Button(action: { showSettings = true }) {
+                ToolbarIconButtonContent(systemName: "gearshape")
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 22)
+        .background(Color.novaContent)
+    }
+}
+
+private struct ModelPill<Content: View>: View {
+    var title: String
+    @ViewBuilder var content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+    }
+}
+
+private struct ModelPillLabel: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(text)
+                .font(.system(size: 13, weight: .semibold))
+            Image(systemName: "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+        .novaForeground(Color.white)
+    }
+}
+
+private struct WorkspacePill<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+    }
+}
+
+private struct ToolbarIconButton: View {
+    let systemName: String
+
+    var body: some View {
+        Button(action: {}) {
+            ToolbarIconButtonContent(systemName: systemName)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct ToolbarIconButtonContent: View {
+    let systemName: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 16, weight: .semibold))
+            .novaForeground(Color.white)
+            .frame(width: 42, height: 42)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+    }
+}
+
+private struct ConversationHeader: View {
+    let conversation: Conversation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(conversation.title)
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .novaForeground(Color.white)
+                    Text("Last updated \(conversation.relativeDate) • \(conversation.model)")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .novaForeground(Color.novaMuted)
+                }
+                Spacer()
+                HStack(spacing: 10) {
+                    NovaTag(text: "Workspace")
+                    NovaTag(text: conversation.model)
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+                .frame(height: 1)
         }
     }
 }
 
-private struct ChatPreviewCard: View {
-    @Binding var composerText: String
+private struct MessageRow: View {
+    let message: Conversation.Message
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 14) {
-                Circle()
-                    .fill(Color.novaAccent)
-                    .frame(width: 44, height: 44)
-                    .overlay(Text("NI").font(.system(size: 16, weight: .bold)))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Hello, Obi")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+        HStack(alignment: .top, spacing: 18) {
+            Circle()
+                .fill(message.role == .assistant ? Color.novaAccent : Color.novaUser)
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Text(message.role == .assistant ? "NI" : "OB")
+                        .font(.system(size: 14, weight: .bold))
                         .novaForeground(Color.white)
-                    Text("What are 5 creative things I could do with my kids' art? I don't want to throw them away, but it's also so much clutter!")
-                        .font(.system(size: 14))
-                        .novaForeground(Color.white.opacity(0.85))
-                        .lineSpacing(4)
+                )
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center) {
+                    Text(message.role == .assistant ? "Nova Intelligence" : "Obi")
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .novaForeground(Color.white)
+                    Text(message.timestamp)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .novaForeground(Color.novaMuted)
+                    Spacer()
+                    if message.role == .assistant {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 12, weight: .semibold))
+                            .novaForeground(Color.novaAccent)
+                    }
                 }
-                Spacer()
-                VStack(spacing: 12) {
-                    HoverIconButton(systemName: "tray.and.arrow.down")
-                    HoverIconButton(systemName: "square.and.arrow.up")
+                Text(message.content)
+                    .font(.system(size: 14.5, weight: .regular))
+                    .lineSpacing(6)
+                    .novaForeground(Color.white.opacity(0.94))
+                if let highlights = message.highlights {
+                    HighlightCard(highlights: highlights)
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 18)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(message.role == .assistant ? Color.novaAssistantBubble : Color.novaUserBubble)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.07), lineWidth: 1)
+            )
+        }
+    }
+}
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Suggested")
-                    .font(.system(size: 12, weight: .semibold))
-                    .novaForeground(Color.novaMuted)
-                HStack(spacing: 12) {
-                    ForEach(SampleData.suggestions, id: \.self) { suggestion in
-                        Text(suggestion)
-                            .font(.system(size: 12, weight: .medium))
-                            .novaForeground(Color.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.novaSurface)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.novaBorder, lineWidth: 1)
-                            )
-                    }
+private struct HighlightCard: View {
+    let highlights: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Highlights")
+                .font(.system(size: 12, weight: .semibold))
+                .novaForeground(Color.novaMuted)
+            ForEach(highlights, id: \.self) { item in
+                HStack(alignment: .top, spacing: 8) {
+                    Circle()
+                        .fill(Color.novaAccent.opacity(0.24))
+                        .frame(width: 18, height: 18)
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .novaForeground(Color.novaAccent)
+                        )
+                    Text(item)
+                        .font(.system(size: 13, weight: .medium))
+                        .novaForeground(Color.white.opacity(0.94))
+                }
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+private struct SuggestionsCluster: View {
+    let suggestions: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Try asking")
+                .font(.system(size: 12, weight: .semibold))
+                .novaForeground(Color.novaMuted)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 140), spacing: 10), count: 2), spacing: 10) {
+                ForEach(suggestions, id: \.self) { suggestion in
+                    Text(suggestion)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.06))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                        .novaForeground(Color.white)
                 }
             }
         }
         .padding(24)
         .background(
-            RoundedRectangle(cornerRadius: 28)
-                .fill(Color.novaSurface)
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white.opacity(0.03))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 28)
-                .stroke(Color.novaBorder.opacity(0.8), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
         )
     }
 }
@@ -323,48 +576,67 @@ private struct ComposerView: View {
     @Binding var text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
-                AttachButton(label: "Upload Files", icon: "tray.and.arrow.up")
-                AttachButton(label: "Capture", icon: "camera")
-                AttachButton(label: "Attach Notes", icon: "note.text")
+                ComposerAction(icon: "tray.and.arrow.up", label: "Upload Files")
+                ComposerAction(icon: "camera", label: "Capture")
+                ComposerAction(icon: "note.text", label: "Attach Note")
                 Spacer()
-                HoverIconButton(systemName: "mic")
-                HoverIconButton(systemName: "ellipsis")
+                ToolbarIconButton(systemName: "mic")
+                ToolbarIconButton(systemName: "square.grid.2x2")
             }
+            .padding(.horizontal, 6)
 
-            RoundedRectangle(cornerRadius: 26)
-                .fill(Color.novaSurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 26)
-                        .stroke(Color.novaBorder, lineWidth: 1)
-                )
-                .overlay(
-                    HStack(spacing: 16) {
-                        TextEditor(text: $text)
-                            .font(.system(size: 14))
-                            .scrollContentBackground(.hidden)
-                            .novaForeground(Color.white)
-                            .frame(minHeight: 80, maxHeight: 120)
-                            .padding(.vertical, 18)
-                        Spacer()
-                        Button(action: {}) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 30))
-                                .novaForeground(Color.novaAccent)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, 18)
+            VStack(spacing: 0) {
+                TextEditor(text: $text)
+                    .font(.system(size: 14.5))
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 120, maxHeight: 160)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 22)
+                    .padding(.bottom, 14)
+                    .background(Color.clear)
+                Divider().overlay(Color.white.opacity(0.06))
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Nova Suggest is enabled")
+                            .font(.system(size: 12, weight: .medium))
                     }
-                        .padding(.leading, 24)
-                )
+                    .novaForeground(Color.novaMuted)
+                    Spacer()
+                    Button(action: {}) {
+                        Text("Generate")
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .fill(Color.novaAccent)
+                            )
+                            .novaForeground(Color.black)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Color.white.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 28)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
     }
 }
 
-private struct AttachButton: View {
-    let label: String
+private struct ComposerAction: View {
     let icon: String
+    let label: String
 
     var body: some View {
         HStack(spacing: 8) {
@@ -373,97 +645,204 @@ private struct AttachButton: View {
             Text(label)
                 .font(.system(size: 12, weight: .medium))
         }
-        .novaForeground(Color.novaMuted)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.novaSurface.opacity(0.6))
+                .fill(Color.white.opacity(0.04))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.novaBorder, lineWidth: 1)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
+        .novaForeground(Color.novaMuted)
     }
 }
 
-private struct HoverIconButton: View {
-    let systemName: String
-    @State private var isHovering = false
+private struct NovaTag: View {
+    let text: String
 
     var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 15, weight: .semibold))
-            .novaForeground(Color.white)
-            .frame(width: 44, height: 44)
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .bold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(isHovering ? Color.novaSurface.opacity(0.9) : Color.novaSurface.opacity(0.6))
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.novaBorder, lineWidth: 1)
+                Capsule()
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
             )
-            .onHover { hovering in
-                #if os(macOS)
-                isHovering = hovering
-                #endif
+            .novaForeground(Color.novaMuted)
+    }
+}
+
+// MARK: - Secondary Column
+
+private struct SecondaryColumn: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                SessionPanel()
+                QuickActionsPanel()
+                KeyboardShortcutsPanel()
             }
+            .padding(.horizontal, 26)
+            .padding(.vertical, 32)
+        }
+        .frame(width: 320, maxHeight: .infinity)
+        .background(Color.novaSidebar)
     }
 }
 
-private struct SidebarItem: Identifiable {
-    let id: UUID
-    let icon: String
-    let label: String
-    var trailing: Text?
-
-    init(id: UUID = UUID(), icon: String, label: String, trailing: Text? = nil) {
-        self.id = id
-        self.icon = icon
-        self.label = label
-        self.trailing = trailing
+private struct SessionPanel: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            panelHeader(title: "Session")
+            VStack(alignment: .leading, spacing: 10) {
+                SessionRow(title: "Project", value: "Nova Classroom Vision")
+                SessionRow(title: "Owner", value: "Obi")
+                SessionRow(title: "Created", value: "Mar 6, 2025")
+            }
+        }
+        .padding(22)
+        .background(NovaPanelBackground())
     }
 }
 
-private struct Folder: Identifiable {
-    let id: UUID = UUID()
-    let name: String
-    let chatCount: Int
+private struct QuickActionsPanel: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            panelHeader(title: "Quick Actions")
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(SampleData.quickActions, id: \.self) { action in
+                    HStack(spacing: 10) {
+                        Image(systemName: action.icon)
+                            .font(.system(size: 12, weight: .semibold))
+                            .novaForeground(Color.novaAccent)
+                        Text(action.title)
+                            .font(.system(size: 12.5, weight: .medium))
+                            .novaForeground(Color.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .novaForeground(Color.novaMuted)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                }
+            }
+        }
+        .padding(22)
+        .background(NovaPanelBackground())
+    }
 }
 
-private enum SampleData {
-    static let generalItems: [SidebarItem] = [
-        SidebarItem(icon: "plus", label: "New Chat"),
-        SidebarItem(icon: "magnifyingglass", label: "Search"),
-        SidebarItem(icon: "square.and.pencil", label: "Notes"),
-        SidebarItem(icon: "rectangle.stack", label: "Workspace")
-    ]
-
-    static let folders: [Folder] = [
-        Folder(name: "Folder 1", chatCount: 4),
-        Folder(name: "Research", chatCount: 12),
-        Folder(name: "Product", chatCount: 7)
-    ]
-
-    static let suggestions = [
-        "Give me ideas",
-        "Summarize recent chats",
-        "Brainstorm for the next art unit"
-    ]
-
-    static let models = ["Nova Ultra", "Nova Mini", "Nova Voice" ]
-
-    static let workspaces = ["Default", "Team", "Personal"]
+private struct KeyboardShortcutsPanel: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            panelHeader(title: "Keyboard Shortcuts")
+            VStack(alignment: .leading, spacing: 10) {
+                ShortcutRow(keys: "⌘" + "K", description: "Command Palette")
+                ShortcutRow(keys: "⌘" + "⇧" + "F", description: "Search Messages")
+                ShortcutRow(keys: "⌘" + "Enter", description: "Send Message")
+            }
+        }
+        .padding(22)
+        .background(NovaPanelBackground())
+    }
 }
+
+private struct SessionRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .novaForeground(Color.novaMuted)
+            Spacer()
+            Text(value)
+                .font(.system(size: 12.5, weight: .semibold))
+                .novaForeground(Color.white)
+        }
+        Divider().overlay(Color.white.opacity(0.06))
+    }
+}
+
+private struct ShortcutRow: View {
+    let keys: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ShortcutBadge(text: keys)
+            Text(description)
+                .font(.system(size: 12.5, weight: .medium))
+                .novaForeground(Color.white)
+            Spacer()
+        }
+    }
+}
+
+private struct ShortcutBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12, weight: .bold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+            .novaForeground(Color.white)
+    }
+}
+
+private func panelHeader(title: String) -> some View {
+    Text(title.uppercased())
+        .font(.system(size: 11, weight: .semibold))
+        .novaForeground(Color.novaSectionHeader)
+}
+
+private struct NovaPanelBackground: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 24)
+            .fill(Color.white.opacity(0.04))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Settings Overlay
 
 private struct SettingsOverlay: View {
     @Binding var isPresented: Bool
-    @State private var selection: SettingsCategory = .general
+    @State private var category: SettingsCategory = .general
     @State private var theme: ThemeOption = .system
     @State private var language: LanguageOption = .englishUS
-    @State private var notificationsEnabled = false
-    @State private var systemPrompt = "Enter system prompt here"
+    @State private var telemetry = false
+    @State private var autoArchive = true
+    @State private var voiceMode = false
 
     var body: some View {
         ZStack {
@@ -472,223 +851,340 @@ private struct SettingsOverlay: View {
                 .onTapGesture { isPresented = false }
 
             VStack(spacing: 0) {
-                HStack {
-                    Text("Settings")
-                        .font(.system(size: 18, weight: .semibold))
-                        .novaForeground(Color.white)
-                    Spacer()
-                    Button(action: { isPresented = false }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .novaForeground(Color.white)
-                            .padding(8)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 20)
-
-                Divider().overlay(Color.novaBorder)
-
+                header
+                Divider().overlay(Color.novaDivider)
                 HStack(spacing: 0) {
-                    settingsSidebar
-                    Divider().overlay(Color.novaBorder)
-                    settingsDetail
+                    SettingsSidebar(category: $category)
+                    Divider().overlay(Color.novaDivider)
+                    SettingsDetail(
+                        category: category,
+                        theme: $theme,
+                        language: $language,
+                        telemetry: $telemetry,
+                        autoArchive: $autoArchive,
+                        voiceMode: $voiceMode
+                    )
                 }
-                .frame(height: 420)
-
-                Divider().overlay(Color.novaBorder)
-
-                HStack {
-                    Spacer()
-                    Button(action: { isPresented = false }) {
-                        Text("Save")
-                            .font(.system(size: 14, weight: .semibold))
-                            .novaForeground(Color.white)
-                            .padding(.horizontal, 26)
-                            .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 20).fill(Color.novaAccent))
-                    }
-                }
-                .padding(20)
+                Divider().overlay(Color.novaDivider)
+                footer
             }
-            .frame(width: 760)
-            .background(RoundedRectangle(cornerRadius: 28).fill(Color.novaSurface))
+            .frame(width: 860, height: 520)
+            .background(
+                RoundedRectangle(cornerRadius: 32)
+                    .fill(Color.novaSurface)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 28)
-                    .stroke(Color.novaBorder, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 32)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
     }
 
-    private var settingsSidebar: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(SettingsCategory.allCases) { category in
-                Button(action: { selection = category }) {
-                    HStack {
-                        Text(category.title)
-                            .font(.system(size: 13, weight: .medium))
-                            .novaForeground(selection == category ? Color.white : Color.novaMuted)
-                        Spacer()
-                        if category == .search {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 12, weight: .semibold))
+    private var header: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Settings")
+                    .font(.system(size: 18, weight: .semibold))
+                    .novaForeground(Color.white)
+                Text("Nova Intelligence (beta)")
+                    .font(.system(size: 12, weight: .medium))
+                    .novaForeground(Color.novaMuted)
+            }
+            Spacer()
+            Button(action: { isPresented = false }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .novaForeground(Color.white)
+                    .padding(10)
+                    .background(
+                        Circle().fill(Color.white.opacity(0.05))
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 24)
+    }
+
+    private var footer: some View {
+        HStack {
+            NovaTag(text: "Version 0.6.34")
+            Spacer()
+            Button(action: { isPresented = false }) {
+                Text("Close")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 26)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(Color.novaAccent)
+                    )
+                    .novaForeground(Color.black)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 18)
+    }
+}
+
+private struct SettingsSidebar: View {
+    @Binding var category: SettingsCategory
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(SettingsCategory.allCases) { item in
+                Button(action: { category = item }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .novaForeground(category == item ? Color.novaAccent : Color.novaMuted)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                                .font(.system(size: 13.5, weight: .semibold))
+                            Text(item.subtitle)
+                                .font(.system(size: 11, weight: .medium))
                                 .novaForeground(Color.novaMuted)
                         }
+                        Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(selection == category ? Color.novaSurfaceElevated : Color.clear)
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(category == item ? Color.white.opacity(0.08) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
             }
             Spacer()
         }
-        .padding(20)
-        .frame(width: 200)
-    }
-
-    private var settingsDetail: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            switch selection {
-            case .general:
-                SettingsSection(title: "Nova Intelligence Settings") {
-                    Picker("Theme", selection: $theme) {
-                        ForEach(ThemeOption.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Picker("Language", selection: $language) {
-                        ForEach(LanguageOption.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    Toggle("Notifications", isOn: $notificationsEnabled)
-                        .toggleStyle(SwitchToggleStyle(tint: Color.novaAccent))
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("System Prompt")
-                            .font(.system(size: 12, weight: .semibold))
-                            .novaForeground(Color.novaMuted)
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.novaSurfaceElevated)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(Color.novaBorder, lineWidth: 1)
-                            )
-                            .overlay(
-                                TextEditor(text: $systemPrompt)
-                                    .font(.system(size: 13))
-                                    .novaForeground(Color.white)
-                                    .padding(16)
-                                    .scrollContentBackground(.hidden)
-                            )
-                            .frame(height: 120)
-                    }
-                }
-
-            case .dataControls:
-                SettingsSection(title: "Data Controls") {
-                    SettingsLinkRow(title: "Import Chats")
-                    SettingsLinkRow(title: "Export Chats")
-                    SettingsLinkRow(title: "Archive All Chats")
-                    SettingsLinkRow(title: "Delete All Chats", accent: .pink)
-                }
-
-            case .account:
-                SettingsSection(title: "Your Account") {
-                    HStack(spacing: 16) {
-                        Circle()
-                            .fill(Color.novaAccent)
-                            .frame(width: 48, height: 48)
-                            .overlay(Text("O").font(.system(size: 20, weight: .bold)))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Obi")
-                                .font(.system(size: 15, weight: .semibold))
-                            Text("Share your background and interests")
-                                .font(.system(size: 13))
-                                .novaForeground(Color.novaMuted)
-                        }
-                    }
-
-                    SettingsLinkRow(title: "Notification Webhook")
-                    SettingsLinkRow(title: "Change Password")
-                    SettingsLinkRow(title: "API Keys")
-                }
-
-            case .about:
-                SettingsSection(title: "Nova Intelligence Version") {
-                    Text("0.6.34")
-                        .font(.system(size: 13, weight: .semibold))
-                        .novaForeground(Color.white)
-                    Text(SampleData.licenseText)
-                        .font(.system(size: 11))
-                        .novaForeground(Color.novaMuted)
-                        .lineSpacing(4)
-                }
-
-            default:
-                SettingsSection(title: selection.title) {
-                    Text("Coming soon")
-                        .font(.system(size: 13))
-                        .novaForeground(Color.novaMuted)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(26)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color.novaSurface)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 24)
+        .frame(width: 260, alignment: .top)
+        .background(Color.novaSurfaceShade)
     }
 }
 
-private struct SettingsSection<Content: View>: View {
-    let title: String
-    @ViewBuilder let content: Content
+private struct SettingsDetail: View {
+    let category: SettingsCategory
+    @Binding var theme: ThemeOption
+    @Binding var language: LanguageOption
+    @Binding var telemetry: Bool
+    @Binding var autoArchive: Bool
+    @Binding var voiceMode: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .novaForeground(Color.white)
-            VStack(alignment: .leading, spacing: 16) {
-                content
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                switch category {
+                case .general:
+                    generalSection
+                case .interface:
+                    interfaceSection
+                case .tools:
+                    toolsSection
+                case .personalisation:
+                    personalisationSection
+                case .audio:
+                    audioSection
+                case .dataControls:
+                    dataControlsSection
+                case .account:
+                    accountSection
+                case .about:
+                    aboutSection
+                case .search:
+                    searchSection
+                }
+            }
+            .padding(32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.novaSurface)
+    }
+
+    private var generalSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            SectionHeader(title: "Theme")
+            SegmentedControl(options: ThemeOption.allCases.map { $0.title }, selection: Binding(
+                get: { theme.index },
+                set: { theme = ThemeOption(index: $0) }
+            ))
+            SectionHeader(title: "Language")
+            Picker("Language", selection: $language) {
+                ForEach(LanguageOption.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 420)
+        }
+    }
+
+    private var interfaceSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            SectionHeader(title: "Interface")
+            NovaToggleRow(title: "Auto-archive inactive chats", isOn: $autoArchive)
+            NovaToggleRow(title: "Show message timestamps", isOn: .constant(true))
+        }
+    }
+
+    private var toolsSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Connected Tools")
+            SettingsListRow(title: "Google Drive", detail: "Connected")
+            SettingsListRow(title: "Slack", detail: "Requires attention")
+            SettingsListRow(title: "Figma", detail: "Not connected")
+        }
+    }
+
+    private var personalisationSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Personalisation")
+            SettingsTextBlock(text: SampleData.systemPrompt)
+        }
+    }
+
+    private var audioSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Voice Mode")
+            NovaToggleRow(title: "Enable Nova Voice", isOn: $voiceMode)
+            SettingsListRow(title: "Preferred voice", detail: "Nova Tone")
+        }
+    }
+
+    private var dataControlsSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Data Controls")
+            NovaToggleRow(title: "Allow product telemetry", isOn: $telemetry)
+            SettingsListRow(title: "Clear chat history", detail: "3.1 GB")
+        }
+    }
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Account")
+            SettingsListRow(title: "Plan", detail: "Nova Intelligence (beta)")
+            SettingsListRow(title: "Members", detail: "8 seats")
+        }
+    }
+
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "About")
+            SettingsTextBlock(text: SampleData.licenseText)
+        }
+    }
+
+    private var searchSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SectionHeader(title: "Search")
+            SettingsTextBlock(text: "Manage search indexing and shortcuts for Nova Intelligence conversations.")
+        }
+    }
+}
+
+private struct SectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold))
+            .novaForeground(Color.white)
+    }
+}
+
+private struct SegmentedControl: View {
+    let options: [String]
+    @Binding var selection: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(Array(options.enumerated()), id: \.offset) { index, title in
+                Button(action: { selection = index }) {
+                    Text(title)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(selection == index ? Color.novaAccent : Color.white.opacity(0.06))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                        .novaForeground(selection == index ? Color.black : Color.white)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 }
 
-private struct SettingsLinkRow: View {
+private struct NovaToggleRow: View {
     let title: String
-    var accent: Color = .white
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .novaForeground(Color.white)
+        }
+        .toggleStyle(SwitchToggleStyle(tint: Color.novaAccent))
+        .padding(.horizontal, 4)
+    }
+}
+
+private struct SettingsListRow: View {
+    let title: String
+    let detail: String
 
     var body: some View {
         HStack {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
+                .novaForeground(Color.white)
             Spacer()
+            Text(detail)
+                .font(.system(size: 12, weight: .semibold))
+                .novaForeground(Color.novaMuted)
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
+                .novaForeground(Color.novaMuted)
         }
-        .novaForeground(accent)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.novaSurfaceElevated)
+                .fill(Color.white.opacity(0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.novaBorder, lineWidth: 1)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
+    }
+}
+
+private struct SettingsTextBlock: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12.5, weight: .medium))
+            .lineSpacing(6)
+            .novaForeground(Color.white.opacity(0.9))
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
     }
 }
 
@@ -718,6 +1214,34 @@ private enum SettingsCategory: String, CaseIterable, Identifiable {
         case .about: return "About"
         }
     }
+
+    var subtitle: String {
+        switch self {
+        case .search: return "Commands, palette & results"
+        case .general: return "Theme, language, defaults"
+        case .interface: return "Layout preferences"
+        case .tools: return "Linked integrations"
+        case .personalisation: return "Prompts & behaviours"
+        case .audio: return "Voice configuration"
+        case .dataControls: return "Retention & privacy"
+        case .account: return "Plan & members"
+        case .about: return "Version & credits"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .search: return "text.magnifyingglass"
+        case .general: return "gearshape"
+        case .interface: return "rectangle.split.3x1"
+        case .tools: return "puzzlepiece.extension"
+        case .personalisation: return "wand.and.stars"
+        case .audio: return "waveform"
+        case .dataControls: return "lock.shield"
+        case .account: return "person.2"
+        case .about: return "info.circle"
+        }
+    }
 }
 
 private enum ThemeOption: String, CaseIterable, Identifiable {
@@ -733,6 +1257,14 @@ private enum ThemeOption: String, CaseIterable, Identifiable {
         case .dark: return "Dark"
         case .light: return "Light"
         }
+    }
+
+    var index: Int {
+        ThemeOption.allCases.firstIndex(of: self) ?? 0
+    }
+
+    init(index: Int) {
+        self = ThemeOption.allCases[index]
     }
 }
 
@@ -752,18 +1284,170 @@ private enum LanguageOption: String, CaseIterable, Identifiable {
     }
 }
 
-private extension Color {
-    static let novaBackground = Color(red: 16/255, green: 16/255, blue: 19/255)
-    static let novaSidebar = Color(red: 22/255, green: 23/255, blue: 28/255)
-    static let novaSurface = Color(red: 30/255, green: 31/255, blue: 36/255)
-    static let novaSurfaceElevated = Color(red: 36/255, green: 37/255, blue: 43/255)
-    static let novaAccent = Color(red: 241/255, green: 180/255, blue: 76/255)
-    static let novaMuted = Color.white.opacity(0.6)
-    static let novaBorder = Color.white.opacity(0.08)
+// MARK: - Sample Data
+
+private struct Conversation: Identifiable {
+    struct Message: Identifiable {
+        enum Role { case user, assistant }
+
+        let id = UUID()
+        let role: Role
+        let content: String
+        let timestamp: String
+        var highlights: [String]? = nil
+    }
+
+    struct QuickAction: Hashable {
+        let icon: String
+        let title: String
+    }
+
+    let id: UUID
+    let title: String
+    let preview: String
+    let relativeDate: String
+    let model: String
+    let icon: String
+    let accent: Color
+    let isPinned: Bool
+    let messages: [Message]
+    let suggestions: [String]
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        preview: String,
+        relativeDate: String,
+        model: String,
+        icon: String,
+        accent: Color,
+        isPinned: Bool = false,
+        messages: [Message],
+        suggestions: [String]
+    ) {
+        self.id = id
+        self.title = title
+        self.preview = preview
+        self.relativeDate = relativeDate
+        self.model = model
+        self.icon = icon
+        self.accent = accent
+        self.isPinned = isPinned
+        self.messages = messages
+        self.suggestions = suggestions
+    }
 }
 
-private extension SampleData {
-    static let licenseText = "Nova Intelligence (beta) incorporates components inspired by the Open WebUI project. The Nova Intelligence desktop shell recreates the interface natively in SwiftUI while retaining the original interaction patterns, shortcuts, and layout conventions."
+private enum SampleData {
+    static let defaultPrompt = "What are five creative things I could do with my kids' art?"
+
+    private static let featuredMessages: [Conversation.Message] = [
+        Conversation.Message(
+            role: .assistant,
+            content: "Here are five creative ways to transform your kids' art into keepsakes and displays:\n\n1. **Gallery Wall Rotation** — Frame a grid of their favorite pieces using magnetic frames so you can swap new art each week.\n2. **Storybook Compilation** — Photograph each masterpiece and create a yearly photo book with captions they dictate.\n3. **Gift Wrap Station** — Turn drawings into custom wrapping paper or thank-you cards for family.\n4. **Fabric Transfer Quilt** — Scan the artwork, print on fabric sheets, and stitch a cozy quilt that keeps memories close.\n5. **Shadow Box Exhibits** — Combine 3D crafts with photos in labeled shadow boxes that rotate seasonally.",
+            timestamp: "Now",
+            highlights: [
+                "Magnetic gallery wall for easy rotation",
+                "Storybook photo album with artist captions",
+                "Fabric transfer quilt using scanned artwork"
+            ]
+        ),
+        Conversation.Message(
+            role: .user,
+            content: "These are amazing! Can you draft an email to parents explaining the rotating gallery idea?",
+            timestamp: "1 min ago"
+        ),
+        Conversation.Message(
+            role: .assistant,
+            content: "Absolutely! Here's a warm, professional draft you can adapt for your classroom.\n\n---\n\nSubject: Showcasing Our Young Artists\n\nHi families,\n\nWe're launching a rotating art gallery to celebrate the imagination blooming in our classroom. Each week, we'll feature a new set of student creations along our hallway display. Students will curate their pieces, add short artist statements, and learn how to present their work with pride.\n\nIf you'd like to help mount frames or photograph artwork, let me know—I'd love to coordinate a volunteer schedule. We'll also capture every display digitally so you can revisit the collection anytime.\n\nThank you for championing our artists!\n\nWarmly,\nObi",
+            timestamp: "moments ago"
+        )
+    ]
+
+    static let conversations: [Conversation] = [
+        Conversation(
+            title: "Classroom art showcase plan",
+            preview: "Outline ideas to display student artwork",
+            relativeDate: "5 minutes ago",
+            model: "Nova Ultra",
+            icon: "wand.and.stars",
+            accent: Color(red: 0.83, green: 0.61, blue: 0.21),
+            isPinned: true,
+            messages: featuredMessages,
+            suggestions: [
+                "Draft a parent newsletter",
+                "Create a budget for the gallery",
+                "Design student feedback prompts",
+                "Plan the unveiling event"
+            ]
+        ),
+        Conversation(
+            title: "STEM night prompts",
+            preview: "Generate interactive booth ideas",
+            relativeDate: "Yesterday",
+            model: "Nova Ultra",
+            icon: "cube.transparent",
+            accent: Color(red: 0.49, green: 0.62, blue: 0.99),
+            messages: featuredMessages,
+            suggestions: ["Map the schedule", "Draft volunteer roles"]
+        ),
+        Conversation(
+            title: "Reading level summaries",
+            preview: "Summaries for parent updates",
+            relativeDate: "2 days ago",
+            model: "Nova Mini",
+            icon: "book.closed",
+            accent: Color(red: 0.57, green: 0.79, blue: 0.62),
+            messages: featuredMessages,
+            suggestions: ["Create takeaway PDF"]
+        ),
+        Conversation(
+            title: "Field trip logistics",
+            preview: "Draft permission slip copy",
+            relativeDate: "1 week ago",
+            model: "Nova Voice",
+            icon: "bus",
+            accent: Color(red: 0.89, green: 0.53, blue: 0.55),
+            messages: featuredMessages,
+            suggestions: ["Outline bus schedule"]
+        )
+    ]
+
+    static let models = ["Nova Ultra", "Nova Mini", "Nova Voice"]
+    static let workspaces = ["Default", "Team", "Personal"]
+
+    static let quickActions: [Conversation.QuickAction] = [
+        .init(icon: "doc.on.doc", title: "Summarize last 7 days"),
+        .init(icon: "calendar", title: "Plan a class event"),
+        .init(icon: "bolt", title: "Generate teaching ideas")
+    ]
+
+    static let systemPrompt = "Nova Intelligence (beta) mirrors the Open WebUI interface with SwiftUI components for a seamless desktop experience."
+
+    static let licenseText = "Nova Intelligence (beta) incorporates interface concepts inspired by the Open WebUI project. This native SwiftUI build recreates the layout, shortcuts, and visual system without bundling upstream binaries."
+}
+
+// MARK: - Colors & Helpers
+
+private extension Color {
+    static let novaWindow = Color(red: 0.08, green: 0.08, blue: 0.1)
+    static let novaSidebar = Color(red: 0.12, green: 0.13, blue: 0.16)
+    static let novaSidebarText = Color(red: 0.16, green: 0.16, blue: 0.2)
+    static let novaContent = Color(red: 0.11, green: 0.11, blue: 0.14)
+    static let novaSurface = Color(red: 0.15, green: 0.16, blue: 0.19)
+    static let novaSurfaceShade = Color(red: 0.13, green: 0.13, blue: 0.16)
+    static let novaDivider = Color.white.opacity(0.06)
+    static let novaAccent = Color(red: 0.95, green: 0.72, blue: 0.32)
+    static let novaMuted = Color.white.opacity(0.68)
+    static let novaSectionHeader = Color.white.opacity(0.45)
+    static let novaButtonGradient = LinearGradient(
+        gradient: Gradient(colors: [Color(red: 0.99, green: 0.71, blue: 0.32), Color(red: 0.9, green: 0.49, blue: 0.28)]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    static let novaAssistantBubble = Color(red: 0.17, green: 0.18, blue: 0.22)
+    static let novaUserBubble = Color(red: 0.16, green: 0.18, blue: 0.22)
+    static let novaUser = Color(red: 0.44, green: 0.61, blue: 0.99)
 }
 
 private extension View {
