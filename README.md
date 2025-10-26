@@ -22,6 +22,17 @@ The script compiles the Swift package if needed and launches the "Nova Intellige
 
 > **Note:** The script requires the macOS Swift toolchain (installed automatically with Xcode 15+ or the standalone Swift installer). No additional dependencies are needed.
 
+### Linux preview server
+
+The same Swift package can serve a faithful Nova Intelligence (beta) preview in environments without SwiftUI (including this repository's Linux development container). The executable exposes a lightweight [SwiftNIO](https://github.com/apple/swift-nio)-powered HTTP server that streams the native layout markup, styles, and JavaScript from Swift source—no Python shims or embedded binaries required.
+
+```bash
+cd NovaIntelligence0/swift/NovaIntelligenceApp
+swift run NovaIntelligenceApp -- --port 4173
+```
+
+Open <http://127.0.0.1:4173> in a browser to interact with the Nova Intelligence (beta) workspace and settings preview. Use `Ctrl+C` to stop the server when you are done testing.
+
 ## Nova Intelligence (beta)-branded container image
 
 The `Dockerfile` extends the upstream image and performs the following Nova Intelligence (beta) rebranding steps:

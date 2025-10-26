@@ -17,10 +17,14 @@ struct NovaIntelligenceApp: App {
 import Foundation
 
 @main
-struct NovaIntelligenceAppCLI {
+enum NovaIntelligenceLinuxApp {
     static func main() {
-        print("Nova Intelligence (beta) is available as a SwiftUI application on Apple platforms.")
-        print("Build and run the package with a SwiftUI-capable toolchain to view the native interface.")
+        do {
+            try LinuxPreviewServer.run()
+        } catch {
+            fputs("Failed to launch Nova Intelligence (beta) preview: \(error)\n", stderr)
+            exit(EXIT_FAILURE)
+        }
     }
 }
 #endif
